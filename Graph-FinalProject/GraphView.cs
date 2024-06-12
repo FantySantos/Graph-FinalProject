@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Metadata.Ecma335;
 using System.Windows.Forms;
 
 namespace Graph_FinalProject
@@ -88,8 +89,6 @@ namespace Graph_FinalProject
                     matrixGridView[j, i].Value = graph.GetEdgeWeight(i, j);
                 }
             }
-
-            richLogs.Text = graph.Print();
         }
 
         private void RedrawGraphFromMatrix(int rowIndex, int columnIndex)
@@ -102,15 +101,12 @@ namespace Graph_FinalProject
             if (graph.GetEdgeWeight(rowIndex, columnIndex) > 0)
             {
                 // Desenhe a linha permanente se o peso da aresta for maior que zero
-                graphRenderer.DrawPermanentLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
+                graphRenderer.DrawPermanentLine(startNodePosition, endNodePosition, checkBoxGrid.Checked, graph.GetEdgeWeight(rowIndex, columnIndex));
             }
             else if (graph.GetEdgeWeight(rowIndex, columnIndex) == 0)
             {
                 // Remova a linha permanente se o peso da aresta for zero
                 graphRenderer.RemovePermanentLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
-
-                if (rowIndex == columnIndex)
-                    graphRenderer.RemoveLoop(startNodePosition, checkBoxGrid.Checked);
             }
 
             // Atualize a imagem do gráfico
@@ -135,42 +131,6 @@ namespace Graph_FinalProject
 
         private void pictureGraph_MouseUp(object sender, MouseEventArgs e)
         {
-            //if (isDragging && startPoint.HasValue)
-            //{
-            //    bool endInsideNodeRadius = false;
-            //    foreach (var position in graphRenderer.GetNodePositions())
-            //    {
-            //        if (IsPointInsideNode(position, e.Location))
-            //        {
-            //            endPoint = new Point((int)position.X, (int)position.Y);
-            //            endInsideNodeRadius = true;
-            //            break;
-            //        }
-            //    }
-
-            //    isDragging = false;
-
-            //    if (endInsideNodeRadius)
-            //    {
-            //        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked);
-            //        int startIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
-            //        int endIndex = graphRenderer.GetNodePositions().IndexOf(endPoint.Value);
-            //        if (startIndex != -1 && endIndex != -1)
-            //            graph.AddEdge(startIndex, endIndex);
-            //        pictureGraph.Image = graphRenderer.GetGraphBitmap();
-            //    }
-            //    else
-            //    {
-            //        graphRenderer.ClearTemporaryLine(checkBoxGrid.Checked);
-            //        pictureGraph.Image = graphRenderer.GetGraphBitmap();
-            //    }
-
-            //    startPoint = null;
-            //    endPoint = null;
-
-            //    UpdateMatrixTable();
-            //}
-
             if (isDragging && startPoint.HasValue)
             {
                 bool endInsideNodeRadius = false;
@@ -188,21 +148,22 @@ namespace Graph_FinalProject
 
                 if (endInsideNodeRadius)
                 {
-                    // Se soltarmos o mouse sobre o mesmo nó, desenhe um loop
+                    int weight = graphRenderer.GetWeight(startPoint.Value, endPoint.Value) + 1;
+
                     if (startPoint == endPoint)
                     {
-                        graphRenderer.DrawLoop(startPoint.Value, checkBoxGrid.Checked);
+                        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked, weight);
                         int nodeIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
                         if (nodeIndex != -1)
-                            graph.AddEdge(nodeIndex, nodeIndex);
+                            graph.AddEdge(nodeIndex, nodeIndex, weight);
                     }
                     else
                     {
-                        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked);
+                        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked, weight);
                         int startIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
                         int endIndex = graphRenderer.GetNodePositions().IndexOf(endPoint.Value);
                         if (startIndex != -1 && endIndex != -1)
-                            graph.AddEdge(startIndex, endIndex);
+                            graph.AddEdge(startIndex, endIndex, weight);
                     }
                     pictureGraph.Image = graphRenderer.GetGraphBitmap();
                 }
@@ -257,6 +218,41 @@ namespace Graph_FinalProject
 
             graphRenderer.SetDirectedMode(radioButtonDirected.Checked);
             graph = new Graph(0, radioButtonDirected.Checked);
+        }
+
+        private void matrixGridView_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                Point startNodePosition = graphRenderer.GetNodePositions()[e.RowIndex];
+                Point endNodePosition = graphRenderer.GetNodePositions()[e.ColumnIndex];
+
+                graphRenderer.DrawTemporaryLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+        }
+
+        private void matrixGridView_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                graphRenderer.ClearTemporaryLine(checkBoxGrid.Checked);
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+        }
+
+        private void buttonRun_Click(object sender, EventArgs e)
+        {
+            if (int.TryParse(textBox.Text, out int nodeNumber) && nodeNumber > 0 && nodeNumber <= numbersNode)
+            {
+                // Pinta o nó correspondente de verde
+                graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[nodeNumber - 1], Color.Yellow);
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+            else
+            {
+                MessageBox.Show("Número inválido ou fora do intervalo!");
+            }
         }
     }
 }

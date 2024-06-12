@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms.VisualStyles;
 
 namespace Graph_FinalProject
 {
@@ -12,8 +13,7 @@ namespace Graph_FinalProject
     {
         private Bitmap graphBitmap;
         private List<Point> nodePositions;
-        private List<Tuple<Point, Point>> edgesPositions;
-        private List<Point> selfLoops;
+        private Dictionary<Tuple<Point, Point>, int> edgesPositions;
         private int numbersNode;
         private bool directedMode = false;
 
@@ -21,8 +21,7 @@ namespace Graph_FinalProject
         {
             graphBitmap = new Bitmap(width, height);
             nodePositions = new List<Point>();
-            edgesPositions = new List<Tuple<Point, Point>>();
-            selfLoops = new List<Point>();
+            edgesPositions = new Dictionary<Tuple<Point, Point>, int>();
             numbersNode = 0;
         }
 
@@ -56,10 +55,24 @@ namespace Graph_FinalProject
             return nodePositions;
         }
 
-        public List<Tuple<Point, Point>> GetEdgesPositions()
+        public Dictionary<Tuple<Point, Point>, int> GetEdgesPositions()
         {
             return edgesPositions;
         }
+
+        public int GetWeight(Point start, Point end)
+        {
+            var line = new Tuple<Point, Point>(start, end);
+            var reverseLine = new Tuple<Point, Point>(end, start);
+
+            if (directedMode && edgesPositions.ContainsKey(line))
+                return edgesPositions[line];
+            else if (edgesPositions.ContainsKey(reverseLine) || edgesPositions.ContainsKey(line))
+                return edgesPositions[edgesPositions.ContainsKey(line) ? line : reverseLine];
+            else
+                return 0;
+        }
+
 
         public void DrawNode(int x, int y)
         {
@@ -128,27 +141,45 @@ namespace Graph_FinalProject
                 if (directedMode)
                     tempLinePen.CustomEndCap = new AdjustableArrowCap(6, 6);
 
-                g.DrawLine(tempLinePen, start, CalculateArrowEndPoint(start, end));
+                if (start == end)
+                {
+
+                    Rectangle rect = new Rectangle(start.X - 20, start.Y - 35, 40, 40);
+                    g.DrawArc(tempLinePen, rect, 160, 230);
+                }
+
+                else
+                {
+                    g.DrawLine(tempLinePen, start, CalculateArrowEndPoint(start, end));
+                }
 
                 RedrawPermanentElements(g);
             }
         }
 
-        public void DrawPermanentLine(Point start, Point end, bool draw)
+        public void DrawPermanentLine(Point start, Point end, bool draw, int weight = 1)
         {
             var line = new Tuple<Point, Point>(start, end);
             var reverseLine = new Tuple<Point, Point>(end, start);
 
-            if (directedMode && !edgesPositions.Contains(line))
+            if (directedMode)
             {
-                edgesPositions.Add(line);
-                DrawGrid(draw);
+                edgesPositions[line] = weight;
             }
-            else if (!edgesPositions.Contains(line) && !edgesPositions.Contains(reverseLine))
+            else // Se não for direcionado
             {
-                edgesPositions.Add(line);
-                DrawGrid(draw);
+                // Se a linha ou a linha reversa já existirem, atualiza a posição
+                if (edgesPositions.ContainsKey(line) || edgesPositions.ContainsKey(reverseLine))
+                {
+                    edgesPositions[edgesPositions.ContainsKey(line) ? line : reverseLine] = weight;
+                }
+                else // Se não existirem, adiciona a linha com o peso
+                {
+                    edgesPositions[line] = weight;
+                }
             }
+
+            DrawGrid(draw);
         }
 
         public void RemovePermanentLine(Point start, Point end, bool draw)
@@ -156,17 +187,17 @@ namespace Graph_FinalProject
             var line = new Tuple<Point, Point>(start, end);
             var reverseLine = new Tuple<Point, Point>(end, start);
 
-            if (directedMode && edgesPositions.Contains(line))
+            if (directedMode && edgesPositions.ContainsKey(line))
             {
                 edgesPositions.Remove(line);
             }
             else
             {
-                if (edgesPositions.Contains(line))
+                if (edgesPositions.ContainsKey(line))
                 {
                     edgesPositions.Remove(line);
                 }
-                else if (edgesPositions.Contains(reverseLine))
+                else if (edgesPositions.ContainsKey(reverseLine))
                 {
                     edgesPositions.Remove(reverseLine);
                 }
@@ -215,42 +246,32 @@ namespace Graph_FinalProject
             return end;
         }
 
-        public void DrawLoop(Point position, bool draw)
+        public void HighlightNode(Point position, Color color)
         {
+            int ray = 20;
+            float diameter = 2 * ray;
+
+            RectangleF boundingBox = new RectangleF(position.X - ray, position.Y - ray, diameter, diameter);
+
             using (Graphics g = Graphics.FromImage(graphBitmap))
             {
-                g.Clear(Color.White);
+                Pen pen = new Pen(Brushes.Black, 5);
+                g.DrawEllipse(pen, boundingBox);
+                g.FillEllipse(new SolidBrush(color), boundingBox);
 
-                if (draw)
+                string text = (nodePositions.IndexOf(position) + 1).ToString();
+                Font font = new Font("Arial", 12, FontStyle.Bold);
+
+                StringFormat stringFormat = new StringFormat()
                 {
-                    int cellSize = 40;
-                    Pen pen = new Pen(Color.LightGray, 1);
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
 
-                    for (int x = 0; x < graphBitmap.Width; x += cellSize)
-                        g.DrawLine(pen, x, 0, x, graphBitmap.Height);
-
-                    for (int y = 0; y < graphBitmap.Height; y += cellSize)
-                        g.DrawLine(pen, 0, y, graphBitmap.Width, y);
-                }
-
-                Pen tempLinePen = new Pen(Color.Black, 2);
-
-                // Adiciona o loop à lista de loops
-                selfLoops.Add(position);
-
-                RedrawPermanentElements(g);
+                g.DrawString(text, font, Brushes.Black, boundingBox, stringFormat);
             }
         }
 
-        public void RemoveLoop(Point position, bool draw)
-        {
-            if (selfLoops.Contains(position))
-            {
-                selfLoops.Remove(position);
-            }
-
-            DrawGrid(draw);
-        }
 
         public void RedrawPermanentElements(Graphics g)
         {
@@ -258,27 +279,49 @@ namespace Graph_FinalProject
             if (directedMode)
                 linePen.CustomEndCap = new AdjustableArrowCap(6, 6);
 
-            foreach (var line in edgesPositions)
+            foreach (var edge in edgesPositions)
             {
-                Point end = CalculateArrowEndPoint(line.Item1, line.Item2);
-                g.DrawLine(linePen, line.Item1, end);
-            }
+                Point start = edge.Key.Item1;
+                Point end = edge.Key.Item2;
+                int weight = edge.Value;
 
-            foreach (var loopPosition in selfLoops)
-            {
-                if (directedMode)
+                if (start == end)
                 {
-                    Rectangle rect = new Rectangle(loopPosition.X - 20, loopPosition.Y - 35, 40, 40);
-                    g.DrawArc(linePen, rect, 160, 210);
-                    
+                    // Draw loop
+                    Rectangle rect = new Rectangle(start.X - 20, start.Y - 35, 40, 40);
+                    g.DrawArc(linePen, rect, 160, 230);
+                    if (weight > 1)
+                    {
+                        Point loopWeightPosition = new Point(start.X, start.Y - 45);
+                        Font font = new Font("Arial", 10, FontStyle.Bold);
+                        StringFormat stringFormat = new StringFormat()
+                        {
+                            Alignment = StringAlignment.Center,
+                            LineAlignment = StringAlignment.Center
+                        };
+                        g.DrawString(weight.ToString(), font, Brushes.Black, loopWeightPosition, stringFormat);
+                    }
                 }
                 else
                 {
-                    Rectangle rect = new Rectangle(loopPosition.X - 20, loopPosition.Y - 35, 40, 40);
-                    g.DrawArc(linePen, rect, 160, 230);
+                    // Draw edge
+                    Point arrowEnd = CalculateArrowEndPoint(start, end);
+                    g.DrawLine(linePen, start, arrowEnd);
+
+                    if (weight > 1)
+                    {
+                        // Draw weight in the middle of the edge
+                        Point midPoint = new Point((start.X + end.X) / 2, ((start.Y + end.Y) / 2) - 15);
+                        Font font = new Font("Arial", 10, FontStyle.Bold);
+                        StringFormat stringFormat = new StringFormat()
+                        {
+                            Alignment = StringAlignment.Center,
+                            LineAlignment = StringAlignment.Center
+                        };
+                        g.DrawString(weight.ToString(), font, Brushes.Black, midPoint, stringFormat);
+                    }
                 }
             }
-
 
             foreach (var position in nodePositions)
             {

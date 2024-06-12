@@ -41,6 +41,8 @@
             radioButtonDirected = new RadioButton();
             radioButtonUndirected = new RadioButton();
             buttonClearGraph = new Button();
+            textBox = new TextBox();
+            buttonRun = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureGraph).BeginInit();
             TabView.SuspendLayout();
             TabAdjacencyMatrix.SuspendLayout();
@@ -144,6 +146,8 @@
             matrixGridView.Size = new Size(534, 534);
             matrixGridView.TabIndex = 0;
             matrixGridView.CellMouseDown += MatrixGridView_CellMouseDown;
+            matrixGridView.CellMouseEnter += matrixGridView_CellMouseEnter;
+            matrixGridView.CellMouseLeave += matrixGridView_CellMouseLeave;
             // 
             // TabLogs
             // 
@@ -183,9 +187,9 @@
             radioButtonDirected.AutoSize = true;
             radioButtonDirected.Location = new Point(147, 51);
             radioButtonDirected.Name = "radioButtonDirected";
-            radioButtonDirected.Size = new Size(97, 24);
+            radioButtonDirected.Size = new Size(88, 24);
             radioButtonDirected.TabIndex = 3;
-            radioButtonDirected.Text = "Orientado";
+            radioButtonDirected.Text = "Oriented";
             radioButtonDirected.UseVisualStyleBackColor = true;
             // 
             // radioButtonUndirected
@@ -194,10 +198,10 @@
             radioButtonUndirected.Checked = true;
             radioButtonUndirected.Location = new Point(12, 51);
             radioButtonUndirected.Name = "radioButtonUndirected";
-            radioButtonUndirected.Size = new Size(129, 24);
+            radioButtonUndirected.Size = new Size(117, 24);
             radioButtonUndirected.TabIndex = 4;
             radioButtonUndirected.TabStop = true;
-            radioButtonUndirected.Text = "Não Orientado";
+            radioButtonUndirected.Text = "Not Oriented";
             radioButtonUndirected.UseVisualStyleBackColor = true;
             radioButtonUndirected.CheckedChanged += radioButton_CheckedChanged;
             // 
@@ -210,15 +214,37 @@
             buttonClearGraph.Name = "buttonClearGraph";
             buttonClearGraph.Size = new Size(94, 29);
             buttonClearGraph.TabIndex = 5;
-            buttonClearGraph.Text = "Apagar";
+            buttonClearGraph.Text = "Clear";
             buttonClearGraph.UseVisualStyleBackColor = true;
             buttonClearGraph.Click += buttonClearGraph_Click;
+            // 
+            // textBox
+            // 
+            textBox.BorderStyle = BorderStyle.FixedSingle;
+            textBox.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            textBox.Location = new Point(12, 12);
+            textBox.Name = "textBox";
+            textBox.Size = new Size(117, 27);
+            textBox.TabIndex = 6;
+            textBox.TextAlign = HorizontalAlignment.Center;
+            // 
+            // buttonRun
+            // 
+            buttonRun.Location = new Point(135, 12);
+            buttonRun.Name = "buttonRun";
+            buttonRun.Size = new Size(94, 27);
+            buttonRun.TabIndex = 7;
+            buttonRun.Text = "Run";
+            buttonRun.UseVisualStyleBackColor = true;
+            buttonRun.Click += buttonRun_Click;
             // 
             // GraphView
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1212, 703);
+            Controls.Add(buttonRun);
+            Controls.Add(textBox);
             Controls.Add(buttonClearGraph);
             Controls.Add(radioButtonUndirected);
             Controls.Add(radioButtonDirected);
@@ -248,5 +274,7 @@
         private RadioButton radioButtonDirected;
         private RadioButton radioButtonUndirected;
         private Button buttonClearGraph;
+        private TextBox textBox;
+        private Button buttonRun;
     }
 }
