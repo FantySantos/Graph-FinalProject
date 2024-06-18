@@ -1,6 +1,8 @@
 using System;
+using System.Net;
 using System.Reflection.Metadata.Ecma335;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 namespace Graph_FinalProject
 {
@@ -9,7 +11,6 @@ namespace Graph_FinalProject
         private int numbersNode = 0;
         private Graph graph;
         private GraphRenderer graphRenderer;
-
         private Point? startPoint = null;
         private Point? endPoint = null;
         private bool isDragging = false;
@@ -18,54 +19,78 @@ namespace Graph_FinalProject
         {
             InitializeComponent();
             graphRenderer = new GraphRenderer(pictureGraph.Width, pictureGraph.Height);
-            graph = new Graph(0, radioButtonDirected.Checked);
+            comboBoxGraphType.SelectedIndex = 0;
+            graph = new Graph(0, false);
+        }
+
+        private void OnNodeVisited(int nodeIndex, int time, string action)
+        {
+            Color color = action == "start" ? Color.Gray : Color.Black;
+            graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[nodeIndex], color);
+            pictureGraph.Image = graphRenderer.GetGraphBitmap();
+
+            richLogs.AppendText($"Node {nodeIndex + 1} {action}: {time}\n");
+            Application.DoEvents();
+            Thread.Sleep(600);
+        }
+
+        private void OnEdgeVisited(int startNodeIndex, int endNodeIndex)
+        {
+            graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNodeIndex], graphRenderer.GetNodePositions()[endNodeIndex], Color.Red);
+            pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            Application.DoEvents();
+            Thread.Sleep(300);
         }
 
         private void PictureGraph_MouseDown(object sender, MouseEventArgs e)
         {
-            radioButtonDirected.Enabled = false;
-            radioButtonUndirected.Enabled = false;
-            bool clickedOnNode = false;
+            comboBoxGraphType.Enabled = false;
+            if (!TrySelectNode(e.Location))
+            {
+                AddNewNode(e.X, e.Y);
+            }
+        }
 
+        private bool TrySelectNode(Point location)
+        {
             foreach (var position in graphRenderer.GetNodePositions())
             {
-                if (IsPointInsideNode(position, e.Location))
+                if (IsPointInsideNode(position, location))
                 {
                     startPoint = new Point((int)position.X, (int)position.Y);
                     isDragging = true;
-                    clickedOnNode = true;
-                    break;
+                    return true;
                 }
             }
+            return false;
+        }
 
-            if (!clickedOnNode)
-            {
-                graphRenderer.DrawNode(e.X, e.Y);
-                pictureGraph.Image = graphRenderer.GetGraphBitmap();
-
-                graph.AddNode();
-                numbersNode = graphRenderer.GetNodePositions().Count;
-
-                UpdateMatrixTable();
-            }
+        private void AddNewNode(int x, int y)
+        {
+            graphRenderer.DrawNode(x, y);
+            pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            graph.AddNode();
+            numbersNode = graphRenderer.GetNodePositions().Count;
+            UpdateMatrixTable();
         }
 
         private void MatrixGridView_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
                 int currentValue = Convert.ToInt32(matrixGridView[e.ColumnIndex, e.RowIndex].Value);
-                graph.AddEdge(e.RowIndex, e.ColumnIndex, currentValue + 1);
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                int currentValue = Convert.ToInt32(matrixGridView[e.ColumnIndex, e.RowIndex].Value);
-                if (currentValue > 0)
+                if (e.Button == MouseButtons.Left)
+                {
+                    graph.AddEdge(e.RowIndex, e.ColumnIndex, currentValue + 1);
+                }
+                else if (e.Button == MouseButtons.Right && currentValue > 0)
+                {
                     graph.AddEdge(e.RowIndex, e.ColumnIndex, currentValue - 1);
-            }
+                }
 
-            UpdateMatrixTable();
-            RedrawGraphFromMatrix(e.RowIndex, e.ColumnIndex);
+                UpdateMatrixTable();
+                RedrawGraphFromMatrix(e.RowIndex, e.ColumnIndex);
+            }
         }
 
         private void UpdateMatrixTable()
@@ -75,9 +100,7 @@ namespace Graph_FinalProject
 
             for (int i = 0; i < numbersNode; i++)
             {
-                matrixGridView.Columns.Add($"{i + 1}", $"{i + 1}");
-                matrixGridView.Columns[i].SortMode = DataGridViewColumnSortMode.NotSortable;
-                matrixGridView.Columns[i].Width = 40;
+                AddMatrixColumn(i);
                 matrixGridView.Rows.Add();
                 matrixGridView.Rows[i].HeaderCell.Value = $"{i + 1}";
             }
@@ -91,25 +114,23 @@ namespace Graph_FinalProject
             }
         }
 
+        private void AddMatrixColumn(int index)
+        {
+            matrixGridView.Columns.Add($"{index + 1}", $"{index + 1}");
+            matrixGridView.Columns[index].SortMode = DataGridViewColumnSortMode.NotSortable;
+            matrixGridView.Columns[index].Width = 40;
+        }
+
         private void RedrawGraphFromMatrix(int rowIndex, int columnIndex)
         {
-            // Obtenha a posição dos nós no gráfico
             Point startNodePosition = graphRenderer.GetNodePositions()[rowIndex];
             Point endNodePosition = graphRenderer.GetNodePositions()[columnIndex];
 
-            // Verifique se o peso da aresta é maior que zero
             if (graph.GetEdgeWeight(rowIndex, columnIndex) > 0)
-            {
-                // Desenhe a linha permanente se o peso da aresta for maior que zero
                 graphRenderer.DrawPermanentLine(startNodePosition, endNodePosition, checkBoxGrid.Checked, graph.GetEdgeWeight(rowIndex, columnIndex));
-            }
-            else if (graph.GetEdgeWeight(rowIndex, columnIndex) == 0)
-            {
-                // Remova a linha permanente se o peso da aresta for zero
+            else
                 graphRenderer.RemovePermanentLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
-            }
 
-            // Atualize a imagem do gráfico
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
         }
 
@@ -119,7 +140,7 @@ namespace Graph_FinalProject
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
         }
 
-        private void pictureGraph_MouseMove(object sender, MouseEventArgs e)
+        private void PictureGraph_MouseMove(object sender, MouseEventArgs e)
         {
             if (isDragging && startPoint.HasValue)
             {
@@ -129,44 +150,12 @@ namespace Graph_FinalProject
             }
         }
 
-        private void pictureGraph_MouseUp(object sender, MouseEventArgs e)
+        private void PictureGraph_MouseUp(object sender, MouseEventArgs e)
         {
             if (isDragging && startPoint.HasValue)
             {
-                bool endInsideNodeRadius = false;
-                foreach (var position in graphRenderer.GetNodePositions())
-                {
-                    if (IsPointInsideNode(position, e.Location))
-                    {
-                        endPoint = new Point((int)position.X, (int)position.Y);
-                        endInsideNodeRadius = true;
-                        break;
-                    }
-                }
-
-                isDragging = false;
-
-                if (endInsideNodeRadius)
-                {
-                    int weight = graphRenderer.GetWeight(startPoint.Value, endPoint.Value) + 1;
-
-                    if (startPoint == endPoint)
-                    {
-                        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked, weight);
-                        int nodeIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
-                        if (nodeIndex != -1)
-                            graph.AddEdge(nodeIndex, nodeIndex, weight);
-                    }
-                    else
-                    {
-                        graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked, weight);
-                        int startIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
-                        int endIndex = graphRenderer.GetNodePositions().IndexOf(endPoint.Value);
-                        if (startIndex != -1 && endIndex != -1)
-                            graph.AddEdge(startIndex, endIndex, weight);
-                    }
-                    pictureGraph.Image = graphRenderer.GetGraphBitmap();
-                }
+                if (TryCompleteEdge(e.Location))
+                    UpdateMatrixTable();
                 else
                 {
                     graphRenderer.ClearTemporaryLine(checkBoxGrid.Checked);
@@ -175,12 +164,42 @@ namespace Graph_FinalProject
 
                 startPoint = null;
                 endPoint = null;
-
-                UpdateMatrixTable();
+                isDragging = false;
             }
         }
 
-        private bool IsPointInsideNode(Point nodePosition, Point clickPosition)
+        private bool TryCompleteEdge(Point location)
+        {
+            foreach (var position in graphRenderer.GetNodePositions())
+            {
+                if (IsPointInsideNode(position, location))
+                {
+                    endPoint = new Point((int)position.X, (int)position.Y);
+                    AddEdge();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void AddEdge()
+        {
+            if (startPoint.HasValue && endPoint.HasValue)
+            {
+                int weight = graphRenderer.GetWeight(startPoint.Value, endPoint.Value) + 1;
+                int startIndex = graphRenderer.GetNodePositions().IndexOf(startPoint.Value);
+                int endIndex = graphRenderer.GetNodePositions().IndexOf(endPoint.Value);
+
+                if (startIndex != -1 && endIndex != -1)
+                {
+                    graph.AddEdge(startIndex, endIndex, weight);
+                    graphRenderer.DrawPermanentLine(startPoint.Value, endPoint.Value, checkBoxGrid.Checked, weight);
+                    pictureGraph.Image = graphRenderer.GetGraphBitmap();
+                }
+            }
+        }
+
+        private static bool IsPointInsideNode(Point nodePosition, Point clickPosition)
         {
             int ray = 20;
             float diameter = 2 * ray;
@@ -188,51 +207,58 @@ namespace Graph_FinalProject
             return nodeBounds.Contains(clickPosition);
         }
 
-        private void pictureGraph_SizeChanged(object sender, EventArgs e)
+        private void PictureGraph_SizeChanged(object sender, EventArgs e)
         {
             graphRenderer.ResizeBitmap(pictureGraph.Width, pictureGraph.Height, checkBoxGrid.Checked);
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
         }
 
-        private void buttonClearGraph_Click(object sender, EventArgs e)
+        private void ButtonClearGraph_Click(object sender, EventArgs e)
+        {
+            ClearGraph();
+        }
+
+        private void ClearGraph()
         {
             graphRenderer.Clear();
-            pictureGraph.Image = graphRenderer.GetGraphBitmap();
-            graph = new Graph(0, radioButtonDirected.Checked);
+            bool typeGraph = GetSelectedGraphType();
+            graph = new Graph(0, typeGraph);
             graphRenderer = new GraphRenderer(pictureGraph.Width, pictureGraph.Height);
+            graphRenderer.SetDirectedMode(typeGraph);
             numbersNode = 0;
             UpdateMatrixTable();
             graphRenderer.DrawGrid(checkBoxGrid.Checked);
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
-            radioButtonDirected.Enabled = true;
-            radioButtonUndirected.Enabled = true;
-            if (!radioButtonDirected.Checked)
-                radioButtonUndirected.Checked = true;
-            graphRenderer.SetDirectedMode(radioButtonDirected.Checked);
+            comboBoxGraphType.Enabled = true;
         }
 
-        private void radioButton_CheckedChanged(object sender, EventArgs e)
+        private bool GetSelectedGraphType()
         {
-            if (!radioButtonDirected.Checked)
-                radioButtonUndirected.Checked = true;
-
-            graphRenderer.SetDirectedMode(radioButtonDirected.Checked);
-            graph = new Graph(0, radioButtonDirected.Checked);
+            return comboBoxGraphType.SelectedIndex == 0 ? false : true;
         }
 
-        private void matrixGridView_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
+        private void ComboBoxGraphType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            bool directedGraph = GetSelectedGraphType();
+            graphRenderer.SetDirectedMode(directedGraph);
+            graph = new Graph(0, directedGraph);
+        }
+
+        private void MatrixGridView_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-            {
-                Point startNodePosition = graphRenderer.GetNodePositions()[e.RowIndex];
-                Point endNodePosition = graphRenderer.GetNodePositions()[e.ColumnIndex];
-
-                graphRenderer.DrawTemporaryLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
-                pictureGraph.Image = graphRenderer.GetGraphBitmap();
-            }
+                DrawTemporaryLineForCell(e.RowIndex, e.ColumnIndex);
         }
 
-        private void matrixGridView_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
+        private void DrawTemporaryLineForCell(int rowIndex, int columnIndex)
+        {
+            Point startNodePosition = graphRenderer.GetNodePositions()[rowIndex];
+            Point endNodePosition = graphRenderer.GetNodePositions()[columnIndex];
+            graphRenderer.DrawTemporaryLine(startNodePosition, endNodePosition, checkBoxGrid.Checked);
+            pictureGraph.Image = graphRenderer.GetGraphBitmap();
+        }
+
+        private void MatrixGridView_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
@@ -241,18 +267,112 @@ namespace Graph_FinalProject
             }
         }
 
-        private void buttonRun_Click(object sender, EventArgs e)
+        private void CheckEdgeExistence()
         {
-            if (int.TryParse(textBox.Text, out int nodeNumber) && nodeNumber > 0 && nodeNumber <= numbersNode)
+            string[] startEnd = textBox.Text.Split('-');
+            if (startEnd.Length != 2)
             {
-                // Pinta o nó correspondente de verde
-                graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[nodeNumber - 1], Color.Yellow);
+                MessageBox.Show("Please enter in the format 'x-y' where x and y are node numbers.");
+                return;
+            }
+
+            if (!int.TryParse(startEnd[0], out int startNode) || !int.TryParse(startEnd[1], out int endNode))
+            {
+                MessageBox.Show("Invalid node numbers.");
+                return;
+            }
+
+            startNode--;
+            endNode--;
+
+            if (startNode < 0 || startNode >= numbersNode || endNode < 0 || endNode >= numbersNode)
+            {
+                richLogs.AppendText($"Invalid node numbers.\n");
+                return;
+            }
+
+            bool exists = graph.HasEdge(startNode, endNode);
+            richLogs.AppendText($"Edge from {startNode + 1} to {endNode + 1} exists: {exists}\n");
+
+            if (exists)
+            {
+                graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNode], graphRenderer.GetNodePositions()[endNode], Color.SpringGreen);
                 pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+        }
+
+        private void GetVertexDegree()
+        {
+            if (!int.TryParse(textBox.Text, out int nodeNumber) || nodeNumber < 1 || nodeNumber > numbersNode)
+            {
+                MessageBox.Show("Please enter a valid node number.");
+                return;
+            }
+
+            (int inDegree, int outDegree) = graph.GetDegree(nodeNumber - 1);
+            if (outDegree == -1)
+                richLogs.AppendText($"Degree of node {nodeNumber}: {inDegree}\n");
+            else
+            {
+                richLogs.AppendText($"In-Degree of node {nodeNumber}: {inDegree}\n");
+                richLogs.AppendText($"Out-Degree of node {nodeNumber}: {outDegree}\n");
+            }
+        }
+
+        private void GetVertexAdjacency()
+        {
+            if (!int.TryParse(textBox.Text, out int nodeNumber) || nodeNumber < 1 || nodeNumber > numbersNode)
+            {
+                MessageBox.Show("Please enter a valid node number.");
+                return;
+            }
+
+            List<int> adjacency = graph.GetAdjacencyList(nodeNumber - 1);
+            richLogs.AppendText($"Adjacency of node {nodeNumber}: {string.Join(", ", adjacency)}\n");
+
+            if (adjacency.Any())
+            {
+                foreach (int node in adjacency)
+                    graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[node - 1], Color.SpringGreen);
+
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+        }
+
+        private void RunDFS()
+        {
+            if (graph.numNodes > 0)
+            {
+                DepthFirstSearch DFS = new DepthFirstSearch(graph);
+                DFS.NodeVisited += OnNodeVisited;
+                DFS.EdgeVisited += OnEdgeVisited;
+                DFS.PerformDFS();
             }
             else
             {
-                MessageBox.Show("Número inválido ou fora do intervalo!");
+                MessageBox.Show("O grafo está vazio. Por favor, carregue um grafo válido.");
             }
+        }
+
+        private void ButtonRun_Click(object sender, EventArgs e)
+        {
+            graphRenderer.DrawGrid(checkBoxGrid.Checked);
+            richLogs.Clear();
+
+            if (radioButtonCheckEdge.Checked)
+                CheckEdgeExistence();
+            else if (radioButtonShowDegree.Checked)
+                GetVertexDegree();
+            else if (radioButtonShowAdjacent.Checked)
+                GetVertexAdjacency();
+            else if (radioButtonDFS.Checked)
+                RunDFS();
+        }
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+                ButtonRun_Click(this, new EventArgs());
         }
     }
 }

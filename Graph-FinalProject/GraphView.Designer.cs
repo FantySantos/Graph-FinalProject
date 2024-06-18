@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
@@ -38,11 +39,15 @@
             TabLogs = new TabPage();
             richLogs = new RichTextBox();
             checkBoxGrid = new CheckBox();
-            radioButtonDirected = new RadioButton();
-            radioButtonUndirected = new RadioButton();
             buttonClearGraph = new Button();
             textBox = new TextBox();
             buttonRun = new Button();
+            radioButtonCheckEdge = new RadioButton();
+            radioButtonShowDegree = new RadioButton();
+            radioButtonShowAdjacent = new RadioButton();
+            comboBoxGraphType = new ComboBox();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            radioButtonDFS = new RadioButton();
             ((System.ComponentModel.ISupportInitialize)pictureGraph).BeginInit();
             TabView.SuspendLayout();
             TabAdjacencyMatrix.SuspendLayout();
@@ -62,10 +67,10 @@
             pictureGraph.Size = new Size(640, 600);
             pictureGraph.TabIndex = 0;
             pictureGraph.TabStop = false;
-            pictureGraph.SizeChanged += pictureGraph_SizeChanged;
+            pictureGraph.SizeChanged += PictureGraph_SizeChanged;
             pictureGraph.MouseDown += PictureGraph_MouseDown;
-            pictureGraph.MouseMove += pictureGraph_MouseMove;
-            pictureGraph.MouseUp += pictureGraph_MouseUp;
+            pictureGraph.MouseMove += PictureGraph_MouseMove;
+            pictureGraph.MouseUp += PictureGraph_MouseUp;
             // 
             // TabView
             // 
@@ -96,7 +101,6 @@
             matrixGridView.AllowUserToResizeColumns = false;
             matrixGridView.AllowUserToResizeRows = false;
             matrixGridView.BackgroundColor = Color.White;
-            matrixGridView.BorderStyle = BorderStyle.None;
             matrixGridView.CellBorderStyle = DataGridViewCellBorderStyle.Sunken;
             matrixGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleCenter;
@@ -146,8 +150,8 @@
             matrixGridView.Size = new Size(534, 534);
             matrixGridView.TabIndex = 0;
             matrixGridView.CellMouseDown += MatrixGridView_CellMouseDown;
-            matrixGridView.CellMouseEnter += matrixGridView_CellMouseEnter;
-            matrixGridView.CellMouseLeave += matrixGridView_CellMouseLeave;
+            matrixGridView.CellMouseEnter += MatrixGridView_CellMouseEnter;
+            matrixGridView.CellMouseLeave += MatrixGridView_CellMouseLeave;
             // 
             // TabLogs
             // 
@@ -174,7 +178,7 @@
             // 
             checkBoxGrid.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             checkBoxGrid.AutoSize = true;
-            checkBoxGrid.Location = new Point(663, 658);
+            checkBoxGrid.Location = new Point(661, 655);
             checkBoxGrid.Name = "checkBoxGrid";
             checkBoxGrid.Size = new Size(59, 24);
             checkBoxGrid.TabIndex = 2;
@@ -182,33 +186,9 @@
             checkBoxGrid.UseVisualStyleBackColor = true;
             checkBoxGrid.CheckedChanged += CheckBoxGrid_CheckedChanged;
             // 
-            // radioButtonDirected
-            // 
-            radioButtonDirected.AutoSize = true;
-            radioButtonDirected.Location = new Point(147, 51);
-            radioButtonDirected.Name = "radioButtonDirected";
-            radioButtonDirected.Size = new Size(88, 24);
-            radioButtonDirected.TabIndex = 3;
-            radioButtonDirected.Text = "Oriented";
-            radioButtonDirected.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonUndirected
-            // 
-            radioButtonUndirected.AutoSize = true;
-            radioButtonUndirected.Checked = true;
-            radioButtonUndirected.Location = new Point(12, 51);
-            radioButtonUndirected.Name = "radioButtonUndirected";
-            radioButtonUndirected.Size = new Size(117, 24);
-            radioButtonUndirected.TabIndex = 4;
-            radioButtonUndirected.TabStop = true;
-            radioButtonUndirected.Text = "Not Oriented";
-            radioButtonUndirected.UseVisualStyleBackColor = true;
-            radioButtonUndirected.CheckedChanged += radioButton_CheckedChanged;
-            // 
             // buttonClearGraph
             // 
-            buttonClearGraph.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            buttonClearGraph.Location = new Point(558, 46);
+            buttonClearGraph.Location = new Point(235, 12);
             buttonClearGraph.MaximumSize = new Size(94, 29);
             buttonClearGraph.MinimumSize = new Size(94, 29);
             buttonClearGraph.Name = "buttonClearGraph";
@@ -216,7 +196,7 @@
             buttonClearGraph.TabIndex = 5;
             buttonClearGraph.Text = "Clear";
             buttonClearGraph.UseVisualStyleBackColor = true;
-            buttonClearGraph.Click += buttonClearGraph_Click;
+            buttonClearGraph.Click += ButtonClearGraph_Click;
             // 
             // textBox
             // 
@@ -227,6 +207,7 @@
             textBox.Size = new Size(117, 27);
             textBox.TabIndex = 6;
             textBox.TextAlign = HorizontalAlignment.Center;
+            textBox.KeyDown += TextBox_KeyDown;
             // 
             // buttonRun
             // 
@@ -236,23 +217,84 @@
             buttonRun.TabIndex = 7;
             buttonRun.Text = "Run";
             buttonRun.UseVisualStyleBackColor = true;
-            buttonRun.Click += buttonRun_Click;
+            buttonRun.Click += ButtonRun_Click;
+            // 
+            // radioButtonCheckEdge
+            // 
+            radioButtonCheckEdge.AutoSize = true;
+            radioButtonCheckEdge.Location = new Point(12, 51);
+            radioButtonCheckEdge.Name = "radioButtonCheckEdge";
+            radioButtonCheckEdge.Size = new Size(107, 24);
+            radioButtonCheckEdge.TabIndex = 8;
+            radioButtonCheckEdge.Text = "Check Edge";
+            radioButtonCheckEdge.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonShowDegree
+            // 
+            radioButtonShowDegree.AutoSize = true;
+            radioButtonShowDegree.Location = new Point(125, 51);
+            radioButtonShowDegree.Name = "radioButtonShowDegree";
+            radioButtonShowDegree.Size = new Size(119, 24);
+            radioButtonShowDegree.TabIndex = 9;
+            radioButtonShowDegree.Text = "Show Degree";
+            radioButtonShowDegree.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonShowAdjacent
+            // 
+            radioButtonShowAdjacent.AutoSize = true;
+            radioButtonShowAdjacent.Location = new Point(250, 51);
+            radioButtonShowAdjacent.Name = "radioButtonShowAdjacent";
+            radioButtonShowAdjacent.Size = new Size(129, 24);
+            radioButtonShowAdjacent.TabIndex = 10;
+            radioButtonShowAdjacent.Text = "Show Adjacent";
+            radioButtonShowAdjacent.UseVisualStyleBackColor = true;
+            // 
+            // comboBoxGraphType
+            // 
+            comboBoxGraphType.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            comboBoxGraphType.FormattingEnabled = true;
+            comboBoxGraphType.Items.AddRange(new object[] { "Not Oriented", "Oriented" });
+            comboBoxGraphType.Location = new Point(729, 653);
+            comboBoxGraphType.Name = "comboBoxGraphType";
+            comboBoxGraphType.Size = new Size(123, 28);
+            comboBoxGraphType.TabIndex = 11;
+            comboBoxGraphType.SelectedIndexChanged += ComboBoxGraphType_SelectedIndexChanged;
+            // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.ImageScalingSize = new Size(20, 20);
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(61, 4);
+            // 
+            // radioButtonDFS
+            // 
+            radioButtonDFS.AutoSize = true;
+            radioButtonDFS.Location = new Point(385, 51);
+            radioButtonDFS.Name = "radioButtonDFS";
+            radioButtonDFS.Size = new Size(56, 24);
+            radioButtonDFS.TabIndex = 12;
+            radioButtonDFS.Text = "DFS";
+            radioButtonDFS.UseVisualStyleBackColor = true;
             // 
             // GraphView
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1212, 703);
+            Controls.Add(radioButtonDFS);
+            Controls.Add(comboBoxGraphType);
+            Controls.Add(radioButtonShowAdjacent);
+            Controls.Add(radioButtonShowDegree);
+            Controls.Add(radioButtonCheckEdge);
             Controls.Add(buttonRun);
             Controls.Add(textBox);
             Controls.Add(buttonClearGraph);
-            Controls.Add(radioButtonUndirected);
-            Controls.Add(radioButtonDirected);
             Controls.Add(checkBoxGrid);
             Controls.Add(TabView);
             Controls.Add(pictureGraph);
             MinimumSize = new Size(1230, 750);
             Name = "GraphView";
+            Text = "Kitiny";
             ((System.ComponentModel.ISupportInitialize)pictureGraph).EndInit();
             TabView.ResumeLayout(false);
             TabAdjacencyMatrix.ResumeLayout(false);
@@ -271,10 +313,14 @@
         private DataGridView matrixGridView;
         private CheckBox checkBoxGrid;
         private RichTextBox richLogs;
-        private RadioButton radioButtonDirected;
-        private RadioButton radioButtonUndirected;
         private Button buttonClearGraph;
         private TextBox textBox;
         private Button buttonRun;
+        private RadioButton radioButtonCheckEdge;
+        private RadioButton radioButtonShowDegree;
+        private RadioButton radioButtonShowAdjacent;
+        private ComboBox comboBoxGraphType;
+        private ContextMenuStrip contextMenuStrip1;
+        private RadioButton radioButtonDFS;
     }
 }

@@ -141,5 +141,56 @@
 
             return richText;
         }
+
+        public (int inDegree, int outDegree) GetDegree(int nodeIndex)
+        {
+            int inDegree = 0;
+            int outDegree = 0;
+
+            if (!directedGraph)
+            {
+                for (int i = 0; i < numNodes; i++)
+                {
+                    if (adjMatrix[i, nodeIndex] > 0)
+                    {
+                        if (i == nodeIndex)
+                            inDegree++;
+                        inDegree++;
+                    }
+                }
+
+                outDegree = -1;
+            }
+            else
+            {
+                for (int i = 0; i < numNodes; i++)
+                {
+                    if (adjMatrix[i, nodeIndex] > 0)
+                        inDegree++;
+                    if (adjMatrix[nodeIndex, i] > 0)
+                        outDegree++;
+                }
+            }
+
+            return (inDegree, outDegree);
+        }
+
+        public List<int> GetAdjacencyList(int nodeIndex)
+        {
+            List<int> adjacencyList = [];
+
+            for (int j = 0; j < numNodes; j++)
+            {
+                if (adjMatrix[nodeIndex, j] > 0)
+                    adjacencyList.Add(j+1);
+                else
+                {
+                if (!directedGraph && adjMatrix[j, nodeIndex] > 0)
+                    adjacencyList.Add(j+1);
+                }
+            }
+
+            return adjacencyList;
+        }
     }
 }
