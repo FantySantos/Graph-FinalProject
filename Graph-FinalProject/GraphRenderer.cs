@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
 namespace Graph_FinalProject
@@ -88,6 +89,27 @@ namespace Graph_FinalProject
             }
 
             nodePositions.Add(new Point(cellX, cellY));
+        }
+
+        public void RemoveLastNode(bool draw)
+        {
+            if (nodePositions.Count == 0) return;
+
+            Point lastNode = nodePositions.Last();
+            nodePositions.RemoveAt(nodePositions.Count - 1);
+
+            var edgesToRemove = edgesPositions
+                .Where(edge => edge.Key.Item1 == lastNode || edge.Key.Item2 == lastNode)
+                .Select(edge => edge.Key)
+                .ToList();
+
+            foreach (var edge in edgesToRemove)
+            {
+                edgesPositions.Remove(edge);
+            }
+
+            numbersNode--;
+            DrawGrid(draw);
         }
 
         public void DrawGrid(bool draw)
@@ -240,7 +262,9 @@ namespace Graph_FinalProject
                     LineAlignment = StringAlignment.Center
                 };
 
-                if (color == Color.Black)
+                Color[] darkColors = { Color.Black, Color.Green, Color.Red, Color.Brown };
+
+                if (darkColors.Contains(color))
                     g.DrawString(text, font, Brushes.White, boundingBox, stringFormat);
                 else
                     g.DrawString(text, font, Brushes.Black, boundingBox, stringFormat);
@@ -269,9 +293,20 @@ namespace Graph_FinalProject
 
                 DrawSingleNode(g, start, nodePositions.IndexOf(start) + 1);
                 DrawSingleNode(g, end, nodePositions.IndexOf(end) + 1);
+
                 if (color == Color.Red)
+                    HighlightNode(start, Color.Gray);
+
+                else if (color == Color.Blue)
                 {
                     HighlightNode(start, Color.Gray);
+                    HighlightNode(end, Color.Gray);
+                }
+
+                else if (color == Color.OrangeRed)
+                {
+                    HighlightNode(start, Color.Black);
+                    HighlightNode(end, Color.Black);
                 }
             }
         }

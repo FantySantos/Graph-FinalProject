@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection.Metadata.Ecma335;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Graph_FinalProject
 {
@@ -20,26 +21,59 @@ namespace Graph_FinalProject
             InitializeComponent();
             graphRenderer = new GraphRenderer(pictureGraph.Width, pictureGraph.Height);
             comboBoxGraphType.SelectedIndex = 0;
+            comboBoxAlgorithms.SelectedIndex = 0;
             graph = new Graph(0, false);
         }
 
-        private void OnNodeVisited(int nodeIndex, int time, string action)
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            Color color = action == "start" ? Color.Gray : Color.Black;
+            if (keyData == (Keys.Control | Keys.Z))
+            {
+                RemoveLastNode();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void RemoveLastNode()
+        {
+            if (numbersNode > 0)
+            {
+                numbersNode--;
+                graph.RemoveNode();
+                graphRenderer.RemoveLastNode(checkBoxGrid.Checked);
+                UpdateMatrixTable();
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+            }
+        }
+
+        private void OnNodeVisited(int nodeIndex, Color color)
+        {
             graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[nodeIndex], color);
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
 
-            richLogs.AppendText($"Node {nodeIndex + 1} {action}: {time}\n");
-            Application.DoEvents();
-            Thread.Sleep(600);
+            if (color == Color.Black || color == Color.Gray)
+            {
+                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+                Application.DoEvents();
+                Thread.Sleep(trackBar.Value);
+            }
         }
 
-        private void OnEdgeVisited(int startNodeIndex, int endNodeIndex)
+        private void OnEdgeVisited(int startNodeIndex, int endNodeIndex, Color color)
         {
-            graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNodeIndex], graphRenderer.GetNodePositions()[endNodeIndex], Color.Red);
+            graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNodeIndex], graphRenderer.GetNodePositions()[endNodeIndex], color);
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
             Application.DoEvents();
-            Thread.Sleep(300);
+            Thread.Sleep(trackBar.Value);
+        }
+
+        private void OnQueue(Queue<int> queue)
+        {
+            richLogs.AppendText("Queue: ");
+            foreach (var log in queue)
+                richLogs.AppendText((log+1).ToString() + ' ');
+            richLogs.AppendText("\n");
         }
 
         private void PictureGraph_MouseDown(object sender, MouseEventArgs e)
@@ -230,6 +264,7 @@ namespace Graph_FinalProject
             graphRenderer.DrawGrid(checkBoxGrid.Checked);
             pictureGraph.Image = graphRenderer.GetGraphBitmap();
             comboBoxGraphType.Enabled = true;
+            richLogs.Clear();
         }
 
         private bool GetSelectedGraphType()
@@ -296,7 +331,7 @@ namespace Graph_FinalProject
 
             if (exists)
             {
-                graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNode], graphRenderer.GetNodePositions()[endNode], Color.SpringGreen);
+                graphRenderer.HighlightEdge(graphRenderer.GetNodePositions()[startNode], graphRenderer.GetNodePositions()[endNode], Color.Orange);
                 pictureGraph.Image = graphRenderer.GetGraphBitmap();
             }
         }
@@ -327,31 +362,138 @@ namespace Graph_FinalProject
                 return;
             }
 
-            List<int> adjacency = graph.GetAdjacencyList(nodeNumber - 1);
-            richLogs.AppendText($"Adjacency of node {nodeNumber}: {string.Join(", ", adjacency)}\n");
+            (List<int> adjacencyIn, List<int> adjacencyOut) = graph.GetAdjacencyList(nodeNumber - 1);
 
-            if (adjacency.Any())
+            if (adjacencyOut.Count == 0)
+                richLogs.AppendText($"Adjacency of node {nodeNumber}: {string.Join(", ", adjacencyIn)}\n");
+            else
             {
-                foreach (int node in adjacency)
-                    graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[node - 1], Color.SpringGreen);
-
-                pictureGraph.Image = graphRenderer.GetGraphBitmap();
+                richLogs.AppendText($"In-Adjacency of node {nodeNumber}: {string.Join(", ", adjacencyIn)}\n");
+                richLogs.AppendText($"Out-Adjacency of node {nodeNumber}: {string.Join(", ", adjacencyOut)}\n");
             }
+
+            if (adjacencyIn.Count != 0)
+            {
+                foreach (int node in adjacencyIn)
+                    graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[node - 1], Color.Orange);
+            }
+            if (adjacencyOut.Count != 0)
+            {
+                foreach (int node in adjacencyOut)
+                    graphRenderer.HighlightNode(graphRenderer.GetNodePositions()[node - 1], Color.Yellow);
+            }
+
+
+            pictureGraph.Image = graphRenderer.GetGraphBitmap();
         }
 
-        private void RunDFS()
+        private void RunGraphCheck(Func<DepthFirstSearch, bool> checkPredicate, string trueMessage, string falseMessage)
         {
             if (graph.numNodes > 0)
             {
-                DepthFirstSearch DFS = new DepthFirstSearch(graph);
+                DepthFirstSearch DFS = new(graph);
                 DFS.NodeVisited += OnNodeVisited;
                 DFS.EdgeVisited += OnEdgeVisited;
-                DFS.PerformDFS();
+
+                bool resultCheck = checkPredicate(DFS);
+
+                for (int i = 0; i < graph.numNodes; i++)
+                    richLogs.AppendText($"Node {i}: {DFS.GetDiscoveryTime(i)}/{DFS.GetFinishTime(i)}\n");
+
+                richLogs.AppendText($"The graph is {(resultCheck ? trueMessage : falseMessage)}.");
             }
             else
             {
-                MessageBox.Show("O grafo está vazio. Por favor, carregue um grafo válido.");
+                MessageBox.Show("The graph is empty. Please load a valid graph.");
             }
+        }
+
+        private void RunSCC()
+        {
+            DepthFirstSearch DFS = new(graph);
+            DFS.NodeVisited += OnNodeVisited;
+            DFS.EdgeVisited += OnEdgeVisited;
+
+            List<List<int>> SCC = DFS.FindStronglyConnectedComponents();
+
+            for (int i = 0; i < SCC.Count; i++)
+                richLogs.AppendText($"Strongly Connected Components {i+1}: {string.Join(", ", SCC[i])}\n");
+        }
+
+        private void RunTopologicalSort()
+        {
+            if (graph.numNodes > 0)
+            {
+                try
+                {
+                    DepthFirstSearch DFS = new(graph);
+                    DFS.NodeVisited += OnNodeVisited;
+                    DFS.EdgeVisited += OnEdgeVisited;
+
+                    DFS.PerformDFS();
+                    List<int> topologicalOrder = DFS.GetTopologicalOrder();
+
+                    for (int i = 0; i < graph.numNodes; i++)
+                        richLogs.AppendText($"Node {i}: {DFS.GetDiscoveryTime(i)}/{DFS.GetFinishTime(i)}\n");
+
+                    richLogs.AppendText("Topological Order: " + string.Join(", ", topologicalOrder.Select(x => x + 1)) + "\n");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    richLogs.AppendText(ex.Message + "\n");
+                }
+            }
+            else
+            {
+                MessageBox.Show("The graph is empty. Please load a valid graph.");
+            }
+        }
+
+        private void RunEulerianCycle()
+        {
+            DepthFirstSearch DFS = new(graph);
+            DFS.NodeVisited += OnNodeVisited;
+            DFS.EdgeVisited += OnEdgeVisited;
+
+            EulerianCycle fleury = new(graph, DFS.IsConnected());
+            fleury.EdgeVisited += OnEdgeVisited;
+
+            List<int> eulerianCycle = fleury.FindEulerianCycle();
+
+            if (eulerianCycle.Count() == 0)
+            {
+                richLogs.AppendText("No Eulerian cycle found.\n");
+                return;
+            }
+
+            richLogs.AppendText($"Eulerian cycle: {string.Join(" - ", eulerianCycle.Select(x => x + 1))}.\n");
+        }
+
+        private void RunBFS()
+        {
+            string[] startEnd = textBox.Text.Split(", ");
+            if (startEnd.Length != 2)
+            {
+                MessageBox.Show("Please enter in the format 'x, y' where x and y are node numbers.");
+                return;
+            }
+
+            if (!int.TryParse(startEnd[0], out int startNode) || !int.TryParse(startEnd[1], out int endNode))
+            {
+                MessageBox.Show("Invalid node numbers.");
+                return;
+            }
+
+            BreadthFirstSearch BFS = new(graph);
+            BFS.NodeVisited += OnNodeVisited;
+            BFS.EdgeVisited += OnEdgeVisited;
+            BFS.Queue += OnQueue;
+
+            List<int> shortestPath = BFS.ObterCaminho(startNode-1, endNode-1);
+            if (shortestPath.Count() > 0)
+                richLogs.AppendText($"Shortest path from {startNode} to {endNode}: {string.Join(" - ", shortestPath.Select(x => x + 1))}.\n");
+            else
+                richLogs.AppendText($"No path exists from {startNode} to {endNode}.\n");
         }
 
         private void ButtonRun_Click(object sender, EventArgs e)
@@ -359,20 +501,41 @@ namespace Graph_FinalProject
             graphRenderer.DrawGrid(checkBoxGrid.Checked);
             richLogs.Clear();
 
-            if (radioButtonCheckEdge.Checked)
+            if (comboBoxAlgorithms.SelectedIndex == 0)
                 CheckEdgeExistence();
-            else if (radioButtonShowDegree.Checked)
+            else if (comboBoxAlgorithms.SelectedIndex == 1)
                 GetVertexDegree();
-            else if (radioButtonShowAdjacent.Checked)
+            else if (comboBoxAlgorithms.SelectedIndex == 2)
                 GetVertexAdjacency();
-            else if (radioButtonDFS.Checked)
-                RunDFS();
+            else if (comboBoxAlgorithms.SelectedIndex == 3)
+                RunGraphCheck(DepthFirstSearch => DepthFirstSearch.IsCyclic(), "cyclic", "acyclic");
+            else if (comboBoxAlgorithms.SelectedIndex == 4)
+                RunGraphCheck(DepthFirstSearch => DepthFirstSearch.IsConnected(), "connected", "disconnected");
+            else if (comboBoxAlgorithms.SelectedIndex == 5)
+                RunSCC();
+            else if (comboBoxAlgorithms.SelectedIndex == 6)
+                RunTopologicalSort();
+            else if (comboBoxAlgorithms.SelectedIndex == 7)
+                RunEulerianCycle();
+            else if (comboBoxAlgorithms.SelectedIndex == 8)
+                RunBFS();
         }
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
                 ButtonRun_Click(this, new EventArgs());
+        }
+
+        private void ComboBoxAlgorithms_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            textBox.Clear();
+            int[] comboBoxIndexes = { 3, 4, 5, 6, 7 };
+
+            if (comboBoxIndexes.Contains(comboBoxAlgorithms.SelectedIndex))
+                textBox.Enabled = false;
+            else
+                textBox.Enabled = true;
         }
     }
 }

@@ -3,7 +3,7 @@
     public class Graph
     {
         public int numNodes { get; private set; }
-        private bool directedGraph;
+        public bool directedGraph;
         public int[,] adjMatrix;
         private int[] positions;
 
@@ -14,6 +14,23 @@
             adjMatrix = new int[initialNumNodes, initialNumNodes];
             positions = new int[initialNumNodes];
             InitializeMatrix();
+        }
+
+        public Graph(Graph original)
+        {
+            this.numNodes = original.numNodes;
+            this.directedGraph = original.directedGraph;
+            this.adjMatrix = new int[original.numNodes, original.numNodes];
+            this.positions = new int[original.numNodes];
+
+            for (int i = 0; i < original.numNodes; i++)
+            {
+                for (int j = 0; j < original.numNodes; j++)
+                {
+                    this.adjMatrix[i, j] = original.adjMatrix[i, j];
+                }
+                this.positions[i] = original.positions[i];
+            }
         }
 
         private void InitializeMatrix()
@@ -43,6 +60,27 @@
             adjMatrix = newAdjMatrix;
             positions = newPositions;
             InitializeNewNode(numNodes - 1);
+        }
+
+        public void RemoveNode()
+        {
+            if (numNodes == 0) return;
+
+            numNodes--;
+            int[,] newAdjMatrix = new int[numNodes, numNodes];
+            int[] newPositions = new int[numNodes];
+
+            for (int i = 0; i < numNodes; i++)
+            {
+                for (int j = 0; j < numNodes; j++)
+                {
+                    newAdjMatrix[i, j] = adjMatrix[i, j];
+                }
+                newPositions[i] = positions[i];
+            }
+
+            adjMatrix = newAdjMatrix;
+            positions = newPositions;
         }
 
         private void InitializeNewNode(int nodeIndex)
@@ -175,22 +213,45 @@
             return (inDegree, outDegree);
         }
 
-        public List<int> GetAdjacencyList(int nodeIndex)
+        public (List<int>, List<int>) GetAdjacencyList(int nodeIndex)
         {
-            List<int> adjacencyList = [];
+            List<int> adjacencyListIn = [];
+            List<int> adjacencyListOut = [];
 
-            for (int j = 0; j < numNodes; j++)
+            if (!directedGraph)
             {
-                if (adjMatrix[nodeIndex, j] > 0)
-                    adjacencyList.Add(j+1);
-                else
+                for (int j = 0; j < numNodes; j++)
                 {
-                if (!directedGraph && adjMatrix[j, nodeIndex] > 0)
-                    adjacencyList.Add(j+1);
+                    if (adjMatrix[j, nodeIndex] > 0)
+                        adjacencyListIn.Add(j + 1);
+                }
+            }
+            else
+            {
+                for (int j = 0; j < numNodes; j++)
+                {
+                    if (adjMatrix[j, nodeIndex] > 0)
+                        adjacencyListIn.Add(j + 1);
+                    if (adjMatrix[nodeIndex, j] > 0)
+                        adjacencyListOut.Add(j + 1);
                 }
             }
 
-            return adjacencyList;
+            return (adjacencyListIn, adjacencyListOut);
         }
+
+        public bool IsWeightedGraph()
+        {
+            for (int i = 0; i < numNodes; i++)
+            {
+                for (int j = 0; j < numNodes; j++)
+                {
+                    if (adjMatrix[i, j] != 0)
+                        return true;
+                }
+            }
+            return false;
+        }
+
     }
 }
