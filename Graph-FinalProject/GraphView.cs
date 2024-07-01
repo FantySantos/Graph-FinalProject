@@ -489,7 +489,7 @@ namespace Graph_FinalProject
             BFS.EdgeVisited += OnEdgeVisited;
             BFS.Queue += OnQueue;
 
-            List<int> shortestPath = BFS.ObterCaminho(startNode-1, endNode-1);
+            List<int> shortestPath = BFS.GetPath(startNode-1, endNode-1);
             if (shortestPath.Count() > 0)
                 richLogs.AppendText($"Shortest path from {startNode} to {endNode}: {string.Join(" - ", shortestPath.Select(x => x + 1))}.\n");
             else

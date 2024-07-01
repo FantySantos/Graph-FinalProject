@@ -76,51 +76,49 @@ namespace Graph_FinalProject
             }
         }
 
-        public List<int> ObterCaminho(int origem, int destino)
+        public List<int> GetPath(int source, int target)
         {
             PerformBFS();
 
-            List<int> caminho = [];
+            List<int> path = new List<int>();
 
-            if (origem > destino && !graph.directedGraph)
+            if (source > target && !graph.directedGraph)
             {
-                ConstruirCaminho(destino, origem, caminho);
-                caminho.Reverse();
+                BuildPath(target, source, path);
+                path.Reverse();
 
-                for (int i = 0; i < caminho.Count - 1; i++)
+                for (int i = 0; i < path.Count - 1; i++)
                 {
-                    int fromNode = caminho[i];
-                    int toNode = caminho[i + 1];
+                    int fromNode = path[i];
+                    int toNode = path[i + 1];
                     EdgeVisited?.Invoke(fromNode, toNode, Color.OrangeRed);
                 }
 
-                return caminho;
+                return path;
             }
 
-            ConstruirCaminho(origem, destino, caminho);
+            BuildPath(source, target, path);
 
-            for (int i = 0; i < caminho.Count - 1; i++)
+            for (int i = 0; i < path.Count - 1; i++)
             {
-                int fromNode = caminho[i];
-                int toNode = caminho[i + 1];
+                int fromNode = path[i];
+                int toNode = path[i + 1];
                 EdgeVisited?.Invoke(fromNode, toNode, Color.OrangeRed);
             }
 
-            return caminho;
+            return path;
         }
 
-        private void ConstruirCaminho(int origem, int v, List<int> caminho)
+        private void BuildPath(int source, int v, List<int> path)
         {
-            if (origem == v)
-                caminho.Add(origem);
-
+            if (source == v)
+                path.Add(source);
             else if (predecessor[v] == -1)
                 return;
-
             else
             {
-                ConstruirCaminho(origem, predecessor[v], caminho);
-                caminho.Add(v);
+                BuildPath(source, predecessor[v], path);
+                path.Add(v);
             }
         }
     }

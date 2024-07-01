@@ -31,6 +31,7 @@
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GraphView));
             pictureGraph = new PictureBox();
             TabView = new TabControl();
             TabAdjacencyMatrix = new TabPage();
@@ -274,9 +275,10 @@
             Controls.Add(buttonClearGraph);
             Controls.Add(checkBoxGrid);
             Controls.Add(TabView);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(1230, 750);
             Name = "GraphView";
-            Text = "Kitiny";
+            Text = "Kintiny";
             ((System.ComponentModel.ISupportInitialize)pictureGraph).EndInit();
             TabView.ResumeLayout(false);
             TabAdjacencyMatrix.ResumeLayout(false);
