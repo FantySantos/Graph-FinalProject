@@ -1,4 +1,6 @@
-﻿namespace Graph_FinalProject
+﻿using System.DirectoryServices;
+
+namespace Graph_FinalProject
 {
     public class Graph
     {
@@ -6,6 +8,8 @@
         public bool directedGraph;
         public int[,] adjMatrix;
         private int[] positions;
+        private List<int> setA;
+        private List<int> setB;
 
         public Graph(int initialNumNodes, bool directedGraph)
         {
@@ -13,6 +17,8 @@
             this.directedGraph = directedGraph;
             adjMatrix = new int[initialNumNodes, initialNumNodes];
             positions = new int[initialNumNodes];
+            setA = new List<int>();
+            setB = new List<int>();
             InitializeMatrix();
         }
 
@@ -22,6 +28,8 @@
             this.directedGraph = original.directedGraph;
             this.adjMatrix = new int[original.numNodes, original.numNodes];
             this.positions = new int[original.numNodes];
+            setA = new List<int>();
+            setB = new List<int>();
 
             for (int i = 0; i < original.numNodes; i++)
             {
@@ -103,7 +111,7 @@
         public bool AdjListIsEmpty(int i)
         {
             for (int j = 0; j < numNodes; j++)
-                if (adjMatrix[i, j] > 0) return false;
+                if (adjMatrix[i, j] != 0) return false;
             return true;
         }
 
@@ -137,6 +145,9 @@
 
         public bool HasEdge(int i, int j)
         {
+            if (i < 0 || i >= numNodes || j < 0 || j >= numNodes)
+                return false;
+
             return adjMatrix[i, j] != 0;
         }
 
@@ -161,25 +172,6 @@
             return graphT;
         }
 
-        public string Print()
-        {
-            string richText = "";
-            Console.WriteLine("Adjacency Matrix:");
-            richText += "Adjacency Matrix:\n";
-            for (int i = 0; i < numNodes; i++)
-            {
-                for (int j = 0; j < numNodes; j++)
-                {
-                    richText += $"{adjMatrix[i, j]} ";
-                    Console.Write(adjMatrix[i, j] + " ");
-                }
-                Console.WriteLine();
-                richText += "\n";
-            }
-
-            return richText;
-        }
-
         public (int inDegree, int outDegree) GetDegree(int nodeIndex)
         {
             int inDegree = 0;
@@ -189,7 +181,7 @@
             {
                 for (int i = 0; i < numNodes; i++)
                 {
-                    if (adjMatrix[i, nodeIndex] > 0)
+                    if (adjMatrix[i, nodeIndex] != 0)
                     {
                         if (i == nodeIndex)
                             inDegree++;
@@ -203,9 +195,9 @@
             {
                 for (int i = 0; i < numNodes; i++)
                 {
-                    if (adjMatrix[i, nodeIndex] > 0)
+                    if (adjMatrix[i, nodeIndex] != 0)
                         inDegree++;
-                    if (adjMatrix[nodeIndex, i] > 0)
+                    if (adjMatrix[nodeIndex, i] != 0)
                         outDegree++;
                 }
             }
@@ -222,7 +214,7 @@
             {
                 for (int j = 0; j < numNodes; j++)
                 {
-                    if (adjMatrix[j, nodeIndex] > 0)
+                    if (adjMatrix[j, nodeIndex] != 0 && j != nodeIndex)
                         adjacencyListIn.Add(j + 1);
                 }
             }
@@ -230,27 +222,117 @@
             {
                 for (int j = 0; j < numNodes; j++)
                 {
-                    if (adjMatrix[j, nodeIndex] > 0)
-                        adjacencyListIn.Add(j + 1);
-                    if (adjMatrix[nodeIndex, j] > 0)
-                        adjacencyListOut.Add(j + 1);
+                    if (j != nodeIndex) 
+                    {
+                        if (adjMatrix[j, nodeIndex] != 0)
+                            adjacencyListIn.Add(j + 1);
+                        if (adjMatrix[nodeIndex, j] != 0)
+                            adjacencyListOut.Add(j + 1);
+                    }
                 }
             }
 
             return (adjacencyListIn, adjacencyListOut);
         }
 
-        public bool IsWeightedGraph()
+        public bool IsBipartite()
         {
+            setA.Clear();
+            setB.Clear();
+
+            int[] colors = new int[numNodes];
+            for (int i = 0; i < numNodes; i++)
+                colors[i] = -1;
+
+            for (int start = 0; start < numNodes; start++)
+            {
+                if (colors[start] == -1)
+                {
+                    Queue<int> queue = new Queue<int>();
+                    queue.Enqueue(start);
+                    colors[start] = 0;
+                    setA.Add(start + 1);
+
+                    while (queue.Count > 0)
+                    {
+                        int node = queue.Dequeue();
+
+                        for (int neighbor = 0; neighbor < numNodes; neighbor++)
+                        {
+                            if (adjMatrix[node, neighbor] != 0)
+                            {
+                                if (colors[neighbor] == -1)
+                                {
+                                    colors[neighbor] = 1 - colors[node];
+                                    queue.Enqueue(neighbor);
+                                    if (colors[neighbor] == 0)
+                                        setA.Add(neighbor + 1);
+                                    else
+                                        setB.Add(neighbor + 1);
+                                }
+                                else if (colors[neighbor] == colors[node])
+                                {
+                                    setA.Clear();
+                                    setB.Clear();
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public int[,] GetCostMatrix()
+        {
+            if (!IsBipartite())
+                throw new InvalidOperationException("Graph is not bipartite.");
+
+            if (setA == null || setB == null)
+                throw new InvalidOperationException("One of the sets is null.");
+
+            int maxSize = Math.Max(setA.Count, setB.Count);
+            int[,] costMatrix = new int[maxSize, maxSize];
+
+            for (int i = 0; i < maxSize; i++)
+            {
+                for (int j = 0; j < maxSize; j++)
+                    costMatrix[i, j] = 0;
+            }
+
+            for (int i = 0; i < setA.Count; i++)
+            {
+                for (int j = 0; j < setB.Count; j++)
+                {
+                    int aIndex = setA[i] - 1;
+                    int bIndex = setB[j] - 1;
+                    costMatrix[i, j] = adjMatrix[aIndex, bIndex];
+                }
+            }
+
+            return costMatrix;
+        }
+
+
+        public bool IsPlanar()
+        {
+            if (numNodes <= 4) return true;
+
+            int edgeCount = 0;
             for (int i = 0; i < numNodes; i++)
             {
                 for (int j = 0; j < numNodes; j++)
-                {
-                    if (adjMatrix[i, j] != 0)
-                        return true;
-                }
+                    if (adjMatrix[i, j] != 0) edgeCount++;
             }
-            return false;
+
+            if (!directedGraph) edgeCount /= 2;
+
+            if (IsBipartite())
+                return edgeCount <= 2 * numNodes - 4;
+            else
+                return edgeCount <= 3 * numNodes - 6;
         }
 
     }

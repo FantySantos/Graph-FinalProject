@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
+using System.Xml.Linq;
 
 namespace Graph_FinalProject
 {
@@ -41,11 +44,6 @@ namespace Graph_FinalProject
             }
         }
 
-        public bool IsEmpty()
-        {
-            return numbersNode != 0;
-        }
-
         public Bitmap GetGraphBitmap()
         {
             return graphBitmap;
@@ -59,19 +57,6 @@ namespace Graph_FinalProject
         public Dictionary<Tuple<Point, Point>, int> GetEdgesPositions()
         {
             return edgesPositions;
-        }
-
-        public int GetWeight(Point start, Point end)
-        {
-            var line = new Tuple<Point, Point>(start, end);
-            var reverseLine = new Tuple<Point, Point>(end, start);
-
-            if (directedMode && edgesPositions.ContainsKey(line))
-                return edgesPositions[line];
-            else if (!directedMode && (edgesPositions.ContainsKey(reverseLine) || edgesPositions.ContainsKey(line)))
-                return edgesPositions[edgesPositions.ContainsKey(line) ? line : reverseLine];
-            else
-                return 0;
         }
 
         public void DrawNode(int x, int y)
@@ -139,6 +124,26 @@ namespace Graph_FinalProject
             RedrawPermanentElements(g);
         }
 
+        public void DrawTemporaryNode(Point originalPosition, Point newPosition, bool draw)
+        {
+            using (Graphics g = Graphics.FromImage(graphBitmap))
+            {
+                DrawGrid(draw, g);
+
+                DrawSingleNode(g, originalPosition, nodePositions.IndexOf(originalPosition) + 1);
+
+                Pen tempPen = new Pen(Color.Gray, 5) { DashStyle = DashStyle.Dash };
+                int ray = 20;
+                float diameter = 2 * ray;
+
+                RectangleF boundingBox = new RectangleF(newPosition.X - ray, newPosition.Y - ray, diameter, diameter);
+                g.DrawEllipse(tempPen, boundingBox);
+                g.FillEllipse(Brushes.LightGray, boundingBox);
+
+                RedrawPermanentElements(g);
+            }
+        }
+
         public void ClearTemporaryLine(bool draw)
         {
             DrawGrid(draw);
@@ -173,6 +178,7 @@ namespace Graph_FinalProject
 
             if (directedMode)
                 edgesPositions[line] = weight;
+
             else
             {
                 if (edgesPositions.ContainsKey(line) || edgesPositions.ContainsKey(reverseLine))
@@ -302,12 +308,6 @@ namespace Graph_FinalProject
                     HighlightNode(start, Color.Gray);
                     HighlightNode(end, Color.Gray);
                 }
-
-                else if (color == Color.OrangeRed)
-                {
-                    HighlightNode(start, Color.Black);
-                    HighlightNode(end, Color.Black);
-                }
             }
         }
 
@@ -327,15 +327,17 @@ namespace Graph_FinalProject
                 {
                     Rectangle rect = new(start.X - 20, start.Y - 35, 40, 40);
                     g.DrawArc(linePen, rect, 160, 230);
-                    if (weight > 1)
+                    if (weight > 1 || weight < 0)
                     {
                         Point loopWeightPosition = new(start.X, start.Y - 45);
+
                         Font font = new("Arial", 10, FontStyle.Bold);
                         StringFormat stringFormat = new()
                         {
                             Alignment = StringAlignment.Center,
                             LineAlignment = StringAlignment.Center
                         };
+
                         g.DrawString(weight.ToString(), font, Brushes.Black, loopWeightPosition, stringFormat);
                     }
                 }
@@ -344,22 +346,91 @@ namespace Graph_FinalProject
                     Point arrowEnd = CalculateArrowEndPoint(start, end);
                     g.DrawLine(linePen, start, arrowEnd);
 
-                    if (weight > 1)
+                    if (weight > 1 || weight < 0)
                     {
-                        Point midPoint = new((start.X + end.X) / 2, ((start.Y + end.Y) / 2) - 15);
+                        Point midPoint = new((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+
+                        if (Math.Abs(start.X - end.X) < Math.Abs(start.Y - end.Y))
+                            midPoint.X += 15;
+                        else
+                            midPoint.Y -= 15;
+
                         Font font = new("Arial", 10, FontStyle.Bold);
                         StringFormat stringFormat = new()
                         {
                             Alignment = StringAlignment.Center,
                             LineAlignment = StringAlignment.Center
                         };
+
                         g.DrawString(weight.ToString(), font, Brushes.Black, midPoint, stringFormat);
                     }
                 }
             }
 
-            foreach (var position in nodePositions)
+            foreach (var position in nodePositions) 
                 DrawSingleNode(g, position, nodePositions.IndexOf(position) + 1);
+        }
+
+        public void UpdateNodePosition(int nodeIndex, int x, int y)
+        {
+            List<Point> newNodePositions = new List<Point>(nodePositions);
+
+            int cellSize = 40;
+            int cellX = (x / cellSize) * cellSize + cellSize / 2;
+            int cellY = (y / cellSize) * cellSize + cellSize / 2;
+
+            if (nodeIndex >= 0 && nodeIndex < nodePositions.Count)
+            {
+                newNodePositions[nodeIndex] = new Point(cellX, cellY);
+                UpdateEdgePositions(newNodePositions);
+            }
+        }
+
+        private void UpdateEdgePositions(List<Point> newNodePositions)
+        {
+            Dictionary<Tuple<Point, Point>, int> newEdgesPositions = new Dictionary<Tuple<Point, Point>, int>();
+
+            foreach (var edge in edgesPositions)
+            {
+                Point start = edge.Key.Item1;
+                Point end = edge.Key.Item2;
+                int weight = edge.Value;
+
+                int startIndex = nodePositions.IndexOf(start);
+                int endIndex = nodePositions.IndexOf(end);
+
+                if (startIndex != -1 && endIndex != -1)
+                {
+                    newEdgesPositions[new Tuple<Point, Point>(newNodePositions[startIndex], newNodePositions[endIndex])] = weight;
+                }
+            }
+
+            nodePositions = newNodePositions;
+            edgesPositions = newEdgesPositions;
+        }
+
+        public void CircularLayout(bool draw)
+        {
+            int nodeCount = nodePositions.Count;
+            if (nodeCount == 0) return;
+
+            int centerX = graphBitmap.Width / 2;
+            int centerY = graphBitmap.Height / 2;
+            int radius = Math.Min(centerX, centerY) - 50;
+
+            List<Point> newNodePositions = new List<Point>(nodeCount);
+
+            for (int i = 0; i < nodeCount; i++)
+            {
+                double angle = 2 * Math.PI * i / nodeCount;
+                int x = (int)(centerX + radius * Math.Cos(angle));
+                int y = (int)(centerY + radius * Math.Sin(angle));
+
+                newNodePositions.Add(new Point(x, y));
+            }
+
+            UpdateEdgePositions(newNodePositions);
+            DrawGrid(draw);
         }
     }
 }

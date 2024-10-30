@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
+using System.Drawing;
 
 namespace Graph_FinalProject
 {
@@ -25,6 +26,7 @@ namespace Graph_FinalProject
         private int[] color;
         public bool isCyclic;
         private List<int> topologicalOrder;
+        private Random random;
 
 
         public DepthFirstSearch(Graph graph)
@@ -38,6 +40,7 @@ namespace Graph_FinalProject
             time = 0;
             color = new int[graph.numNodes];
             topologicalOrder = [];
+            random = new Random();
         }
 
         public void PerformDFS()
@@ -69,7 +72,7 @@ namespace Graph_FinalProject
 
             for (int v = 0; v < graph.numNodes; v++)
             {
-                if (graph.adjMatrix[u, v] > 0)
+                if (graph.adjMatrix[u, v] != 0)
                 {
                     if (color[v] == WHITE)
                     {
@@ -154,7 +157,8 @@ namespace Graph_FinalProject
                 if (color[u] == WHITE)
                 {
                     List<int> component = [];
-                    VisitDFSForSCC(u, transposedGraph, component, sccColorIndex);
+                    Color sccColor = GetRandomColor();
+                    VisitDFSForSCC(u, transposedGraph, component, sccColor);
                     stronglyConnectedComponents.Add(component);
                     sccColorIndex++;
                 }
@@ -168,7 +172,7 @@ namespace Graph_FinalProject
             color[u] = GRAY;
             for (int v = 0; v < graph.numNodes; v++)
             {
-                if (graph.adjMatrix[u, v] > 0 && color[v] == WHITE)
+                if (graph.adjMatrix[u, v] != 0 && color[v] == WHITE)
                 {
                     VisitDFSForStack(v, stack);
                 }
@@ -176,37 +180,29 @@ namespace Graph_FinalProject
             stack.Push(u);
         }
 
-        private void VisitDFSForSCC(int u, Graph transposedGraph, List<int> component, int sccColorIndex)
+        private void VisitDFSForSCC(int u, Graph transposedGraph, List<int> component, Color sccColor)
         {
             color[u] = GRAY;
             component.Add(u + 1);
 
-            Color sccColor = GetColorByIndex(sccColorIndex);
             NodeVisited?.Invoke(u, sccColor);
 
 
             for (int v = 0; v < transposedGraph.numNodes; v++)
             {
-                if (transposedGraph.adjMatrix[u, v] > 0)
+                if (transposedGraph.adjMatrix[u, v] != 0)
                 {
                     if (color[v] == WHITE)
                     {
-                        VisitDFSForSCC(v, transposedGraph, component, sccColorIndex);
+                        VisitDFSForSCC(v, transposedGraph, component, sccColor);
                     }
                 }
             }
         }
 
-        private Color GetColorByIndex(int index)
+        private Color GetRandomColor()
         {
-            Color[] colors = {
-                Color.Red, Color.Green, Color.Yellow, Color.Magenta, Color.Cyan, Color.Aquamarine, Color.Coral,
-                Color.Brown, Color.Chartreuse, Color.DarkGoldenrod, Color.DarkOliveGreen, Color.DarkOrchid, Color.DarkSlateGray,
-                Color.DeepPink, Color.DeepSkyBlue, Color.ForestGreen, Color.Fuchsia, Color.Gold, Color.Honeydew, Color.Indigo,
-                Color.Khaki, Color.Lavender, Color.LightSeaGreen, Color.Lime, Color.MediumOrchid, Color.MediumSpringGreen,
-                Color.MidnightBlue, Color.Moccasin, Color.OliveDrab, Color.Orchid
-            };
-            return colors[index];
+            return Color.FromArgb(random.Next(256), random.Next(256), random.Next(256));
         }
 
         public int GetDiscoveryTime(int v)

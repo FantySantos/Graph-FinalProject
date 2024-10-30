@@ -63,9 +63,9 @@ namespace Graph_FinalProject.Properties {
         /// <summary>
         ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap clean2 {
+        internal static System.Drawing.Bitmap clean {
             get {
-                object obj = ResourceManager.GetObject("clean2", resourceCulture);
+                object obj = ResourceManager.GetObject("clean", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,19 @@ namespace Graph_FinalProject.Properties {
         /// <summary>
         ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap line {
+        internal static System.Drawing.Bitmap graph_layout {
             get {
-                object obj = ResourceManager.GetObject("line", resourceCulture);
+                object obj = ResourceManager.GetObject("graph_layout", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap move {
+            get {
+                object obj = ResourceManager.GetObject("move", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -86,16 +96,6 @@ namespace Graph_FinalProject.Properties {
         internal static System.Drawing.Bitmap play {
             get {
                 object obj = ResourceManager.GetObject("play", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Consulta um recurso localizado do tipo System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap play2 {
-            get {
-                object obj = ResourceManager.GetObject("play2", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

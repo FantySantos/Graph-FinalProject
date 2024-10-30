@@ -12,6 +12,7 @@ namespace Graph_FinalProject
         public event Action<int, Color>? NodeVisited;
         public event Action<int, int, Color>? EdgeVisited;
         public event Action<Queue<int>>? Queue;
+        public event Action? Clear;
 
         private static readonly int WHITE = 0;
         private static readonly int GRAY = 1;
@@ -19,7 +20,6 @@ namespace Graph_FinalProject
 
         private Graph graph;
         private int[] distance, color, predecessor;
-        int distanceLevel;
 
         public BreadthFirstSearch(Graph graph)
         {
@@ -27,83 +27,64 @@ namespace Graph_FinalProject
             distance = new int[graph.numNodes];
             predecessor = new int[graph.numNodes];
             color = new int[graph.numNodes];
-            distanceLevel = 0;
         }
 
-        public void PerformBFS()
+        public void PerformBFS(int source)
         {
             for (int u = 0; u < graph.numNodes; u++)
             {
-                color[u] = WHITE;
-                predecessor[u] = -1;
-                distance[u] = distanceLevel;
-            }
-            for (int u = 0; u < graph.numNodes; u++)
-            {
-                if (color[u] == WHITE)
+                if (u != source)
                 {
-                    VisitBFS(u);
+                    color[u] = WHITE;
+                    distance[u] = int.MaxValue;
+                    predecessor[u] = -1;
                 }
             }
-        }
 
-        private void VisitBFS(int u)
-        {
-            color[u] = GRAY;
-            distance[u] = ++distanceLevel;
+            color[source] = GRAY;
+            distance[source] = 0;
+            predecessor[source] = -1;
+
             Queue<int> queue = new Queue<int>();
-            queue.Enqueue(u);
-            NodeVisited?.Invoke(u, Color.Gray);
+            queue.Enqueue(source);
+            NodeVisited?.Invoke(source, Color.Gray);
 
             while (queue.Count > 0)
             {
                 Queue?.Invoke(queue);
-                int currentNode = queue.Dequeue();
+                int u = queue.Dequeue();
+
                 for (int v = 0; v < graph.numNodes; v++)
                 {
-                    if (graph.adjMatrix[currentNode, v] > 0 && color[v] == WHITE)
+                    if (graph.adjMatrix[u, v] != 0 && color[v] == WHITE)
                     {
                         color[v] = GRAY;
-                        distance[v] = distance[currentNode] + 1;
-                        predecessor[v] = currentNode;
+                        distance[v] = distance[u] + 1;
+                        predecessor[v] = u;
                         queue.Enqueue(v);
                         NodeVisited?.Invoke(v, Color.Gray);
                     }
                 }
 
-                color[currentNode] = BLACK;
-                NodeVisited?.Invoke(currentNode, Color.Black);
+                color[u] = BLACK;
+                NodeVisited?.Invoke(u, Color.Black);
             }
         }
 
         public List<int> GetPath(int source, int target)
         {
-            PerformBFS();
+            PerformBFS(source);
 
             List<int> path = new List<int>();
-
-            if (source > target && !graph.directedGraph)
-            {
-                BuildPath(target, source, path);
-                path.Reverse();
-
-                for (int i = 0; i < path.Count - 1; i++)
-                {
-                    int fromNode = path[i];
-                    int toNode = path[i + 1];
-                    EdgeVisited?.Invoke(fromNode, toNode, Color.OrangeRed);
-                }
-
-                return path;
-            }
-
             BuildPath(source, target, path);
+
+            Clear?.Invoke();
 
             for (int i = 0; i < path.Count - 1; i++)
             {
                 int fromNode = path[i];
                 int toNode = path[i + 1];
-                EdgeVisited?.Invoke(fromNode, toNode, Color.OrangeRed);
+                EdgeVisited?.Invoke(fromNode, toNode, Color.Orange);
             }
 
             return path;

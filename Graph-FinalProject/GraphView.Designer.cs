@@ -1,6 +1,6 @@
 ﻿namespace Graph_FinalProject
 {
-    partial class GraphView
+    partial class Kintiny
     {
         /// <summary>
         ///  Required designer variable.
@@ -31,7 +31,7 @@
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GraphView));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Kintiny));
             pictureGraph = new PictureBox();
             TabView = new TabControl();
             TabAdjacencyMatrix = new TabPage();
@@ -45,6 +45,8 @@
             comboBoxGraphType = new ComboBox();
             comboBoxAlgorithms = new ComboBox();
             trackBar = new TrackBar();
+            CircularLayout = new Button();
+            checkBoxMoveNode = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)pictureGraph).BeginInit();
             TabView.SuspendLayout();
             TabAdjacencyMatrix.SuspendLayout();
@@ -76,6 +78,8 @@
             TabView.Controls.Add(TabAdjacencyMatrix);
             TabView.Controls.Add(TabLogs);
             TabView.Location = new Point(658, 81);
+            TabView.MaximumSize = new Size(548, 573);
+            TabView.MinimumSize = new Size(548, 573);
             TabView.Name = "TabView";
             TabView.SelectedIndex = 0;
             TabView.Size = new Size(548, 573);
@@ -103,7 +107,7 @@
             matrixGridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridViewCellStyle1.BackColor = Color.White;
-            dataGridViewCellStyle1.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle1.Font = new Font("Segoe UI", 9F);
             dataGridViewCellStyle1.ForeColor = SystemColors.WindowText;
             dataGridViewCellStyle1.SelectionBackColor = Color.White;
             dataGridViewCellStyle1.SelectionForeColor = SystemColors.WindowText;
@@ -120,17 +124,17 @@
             dataGridViewCellStyle2.WrapMode = DataGridViewTriState.False;
             matrixGridView.DefaultCellStyle = dataGridViewCellStyle2;
             matrixGridView.Dock = DockStyle.Fill;
-            matrixGridView.EditMode = DataGridViewEditMode.EditProgrammatically;
+            matrixGridView.EditMode = DataGridViewEditMode.EditOnKeystroke;
             matrixGridView.EnableHeadersVisualStyles = false;
             matrixGridView.GridColor = Color.White;
             matrixGridView.Location = new Point(3, 3);
+            matrixGridView.Margin = new Padding(0);
             matrixGridView.MultiSelect = false;
             matrixGridView.Name = "matrixGridView";
-            matrixGridView.ReadOnly = true;
             matrixGridView.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridViewCellStyle3.BackColor = Color.White;
-            dataGridViewCellStyle3.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle3.Font = new Font("Segoe UI", 9F);
             dataGridViewCellStyle3.ForeColor = SystemColors.WindowText;
             dataGridViewCellStyle3.SelectionBackColor = Color.White;
             dataGridViewCellStyle3.SelectionForeColor = SystemColors.WindowText;
@@ -140,16 +144,17 @@
             matrixGridView.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             matrixGridView.RowTemplate.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             matrixGridView.RowTemplate.Height = 40;
-            matrixGridView.RowTemplate.ReadOnly = true;
             matrixGridView.RowTemplate.Resizable = DataGridViewTriState.False;
             matrixGridView.SelectionMode = DataGridViewSelectionMode.CellSelect;
             matrixGridView.ShowCellToolTips = false;
             matrixGridView.ShowEditingIcon = false;
             matrixGridView.Size = new Size(534, 534);
             matrixGridView.TabIndex = 0;
+            matrixGridView.CellEndEdit += matrixGridView_CellEndEdit;
             matrixGridView.CellMouseDown += MatrixGridView_CellMouseDown;
             matrixGridView.CellMouseEnter += MatrixGridView_CellMouseEnter;
             matrixGridView.CellMouseLeave += MatrixGridView_CellMouseLeave;
+            matrixGridView.CellValueChanged += matrixGridView_CellValueChanged;
             // 
             // TabLogs
             // 
@@ -166,6 +171,8 @@
             // 
             richLogs.BackColor = Color.White;
             richLogs.BorderStyle = BorderStyle.FixedSingle;
+            richLogs.Dock = DockStyle.Fill;
+            richLogs.Font = new Font("Segoe UI", 13.2000008F, FontStyle.Regular, GraphicsUnit.Point, 0);
             richLogs.Location = new Point(3, 3);
             richLogs.Name = "richLogs";
             richLogs.ReadOnly = true;
@@ -176,7 +183,8 @@
             // checkBoxGrid
             // 
             checkBoxGrid.AutoSize = true;
-            checkBoxGrid.Location = new Point(135, 51);
+            checkBoxGrid.Font = new Font("Segoe UI", 9F);
+            checkBoxGrid.Location = new Point(138, 50);
             checkBoxGrid.Name = "checkBoxGrid";
             checkBoxGrid.Size = new Size(59, 24);
             checkBoxGrid.TabIndex = 2;
@@ -187,7 +195,7 @@
             // 
             // buttonClearGraph
             // 
-            buttonClearGraph.Image = Properties.Resources.clean2;
+            buttonClearGraph.Image = Properties.Resources.clean;
             buttonClearGraph.ImageAlign = ContentAlignment.MiddleRight;
             buttonClearGraph.Location = new Point(489, 12);
             buttonClearGraph.MaximumSize = new Size(94, 29);
@@ -213,9 +221,9 @@
             // 
             // buttonRun
             // 
-            buttonRun.Image = Properties.Resources.play2;
+            buttonRun.Image = Properties.Resources.play;
             buttonRun.ImageAlign = ContentAlignment.MiddleRight;
-            buttonRun.Location = new Point(389, 10);
+            buttonRun.Location = new Point(389, 12);
             buttonRun.Name = "buttonRun";
             buttonRun.Size = new Size(94, 29);
             buttonRun.TabIndex = 7;
@@ -239,8 +247,8 @@
             // 
             comboBoxAlgorithms.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxAlgorithms.FormattingEnabled = true;
-            comboBoxAlgorithms.Items.AddRange(new object[] { "Check Edge", "Show Degree", "Show Adjacent", "Check Cyclic", "Connection Check", "Strongly Connected Components", "Topological Sort", "Eulerian Cycle", "Find Shortest Path" });
-            comboBoxAlgorithms.Location = new Point(135, 11);
+            comboBoxAlgorithms.Items.AddRange(new object[] { "Check Edge", "Show Degree", "Show Adjacent", "Check Cyclic", "Connection Check", "Strongly Connected Components", "Topological Sort", "Eulerian Cycle", "Find Shortest Path", "Find Least Cost Path", "Independent Set of Vertices", "Dominating Set of Vertices", "Clique", "Planar", "Minimum Spanning Tree", "Hungarian" });
+            comboBoxAlgorithms.Location = new Point(135, 12);
             comboBoxAlgorithms.Name = "comboBoxAlgorithms";
             comboBoxAlgorithms.Size = new Size(248, 28);
             comboBoxAlgorithms.TabIndex = 18;
@@ -261,11 +269,42 @@
             trackBar.TickStyle = TickStyle.None;
             trackBar.Value = 100;
             // 
-            // GraphView
+            // CircularLayout
+            // 
+            CircularLayout.Image = Properties.Resources.graph_layout;
+            CircularLayout.ImageAlign = ContentAlignment.MiddleRight;
+            CircularLayout.Location = new Point(200, 47);
+            CircularLayout.Name = "CircularLayout";
+            CircularLayout.Size = new Size(152, 30);
+            CircularLayout.TabIndex = 20;
+            CircularLayout.Text = "Circular Layout";
+            CircularLayout.TextImageRelation = TextImageRelation.ImageBeforeText;
+            CircularLayout.UseVisualStyleBackColor = true;
+            CircularLayout.Click += CircularLayout_Click;
+            // 
+            // checkBoxMoveNode
+            // 
+            checkBoxMoveNode.Appearance = Appearance.Button;
+            checkBoxMoveNode.AutoSize = true;
+            checkBoxMoveNode.Image = Properties.Resources.move;
+            checkBoxMoveNode.ImageAlign = ContentAlignment.MiddleRight;
+            checkBoxMoveNode.Location = new Point(358, 47);
+            checkBoxMoveNode.Name = "checkBoxMoveNode";
+            checkBoxMoveNode.Size = new Size(117, 30);
+            checkBoxMoveNode.TabIndex = 22;
+            checkBoxMoveNode.Text = "Move Node";
+            checkBoxMoveNode.TextAlign = ContentAlignment.MiddleCenter;
+            checkBoxMoveNode.TextImageRelation = TextImageRelation.ImageBeforeText;
+            checkBoxMoveNode.UseVisualStyleBackColor = true;
+            // 
+            // Kintiny
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1230, 703);
+            ClientSize = new Size(1212, 703);
+            Controls.Add(TabView);
+            Controls.Add(checkBoxMoveNode);
+            Controls.Add(CircularLayout);
             Controls.Add(pictureGraph);
             Controls.Add(trackBar);
             Controls.Add(comboBoxAlgorithms);
@@ -274,10 +313,9 @@
             Controls.Add(textBox);
             Controls.Add(buttonClearGraph);
             Controls.Add(checkBoxGrid);
-            Controls.Add(TabView);
             Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(1230, 750);
-            Name = "GraphView";
+            Name = "Kintiny";
             Text = "Kintiny";
             ((System.ComponentModel.ISupportInitialize)pictureGraph).EndInit();
             TabView.ResumeLayout(false);
@@ -304,5 +342,7 @@
         private ComboBox comboBoxGraphType;
         private TrackBar trackBar;
         private ComboBox comboBoxAlgorithms;
+        private Button CircularLayout;
+        private CheckBox checkBoxMoveNode;
     }
 }
