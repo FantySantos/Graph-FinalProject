@@ -8,6 +8,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Kintiny.ico</ApplicationIcon>
+    <AssemblyName>Kintiny</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

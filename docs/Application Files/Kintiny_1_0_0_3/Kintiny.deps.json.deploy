@@ -1,0 +1,42 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0/win-x64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {},
+    ".NETCoreApp,Version=v8.0/win-x64": {
+      "Kintiny/1.0.0": {
+        "dependencies": {
+          "HungarianAlgorithm": "2.3.2"
+        },
+        "runtime": {
+          "Kintiny.dll": {}
+        }
+      },
+      "HungarianAlgorithm/2.3.2": {
+        "runtime": {
+          "lib/netstandard2.1/HungarianAlgorithm.dll": {
+            "assemblyVersion": "2.3.2.0",
+            "fileVersion": "2.3.2.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Kintiny/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "HungarianAlgorithm/2.3.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Xk0BE2wAB7/o4Ln5xxfnMv4lQt5mhVlSCdbCE+O7fjTJfHaIS5IKy1GDL35bSP1oH8Nry9eQnxJs0bua45D+xQ==",
+      "path": "hungarianalgorithm/2.3.2",
+      "hashPath": "hungarianalgorithm.2.3.2.nupkg.sha512"
+    }
+  }
+}
